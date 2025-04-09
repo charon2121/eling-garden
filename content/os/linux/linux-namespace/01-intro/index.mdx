@@ -1,0 +1,59 @@
+# Linux Namespace 简介
+
+<Callout type="info">
+本文是 Linux Namespace 系列的第一篇，主要介绍 Namespace 的基本概念和作用。
+</Callout>
+
+## 什么是 Namespace
+
+Namespace 是 Linux 内核的一个特性，用于隔离系统资源，使得一组进程看到的系统资源与另一组进程看到的系统资源是不同的。这是实现容器化技术的基础之一。
+
+## Namespace 的类型
+
+Linux 提供了多种不同类型的 Namespace，每种类型隔离不同种类的资源：
+
+1. **PID Namespace**：隔离进程 ID 空间
+2. **Mount Namespace**：隔离文件系统挂载点
+3. **Network Namespace**：隔离网络资源
+4. **UTS Namespace**：隔离主机名和域名
+5. **IPC Namespace**：隔离进程间通信资源
+6. **User Namespace**：隔离用户和组 ID
+7. **Cgroup Namespace**：隔离 cgroup 根目录视图
+
+<CodePlayground
+  title="创建一个简单的 PID Namespace"
+  language="bash"
+  code={`# 需要 root 权限
+unshare --pid --fork --mount-proc /bin/bash
+# 在新的 namespace 中运行 ps 命令
+ps aux
+`}
+/>
+
+## Namespace 的历史
+
+Namespace 的概念最早可以追溯到 2002 年，当时是作为一种资源隔离的机制被提出的。随着时间的推移，不同类型的 Namespace 被逐步添加到 Linux 内核中：
+
+- 2002年：Mount Namespace
+- 2006年：UTS、IPC Namespace
+- 2008年：PID Namespace
+- 2011年：Network Namespace
+- 2013年：User Namespace
+- 2016年：Cgroup Namespace
+
+## Namespace 与容器技术
+
+Namespace 是容器技术（如 Docker、Kubernetes）的核心基础之一。容器技术利用 Namespace 提供的隔离性，使得容器内的进程与主机系统及其他容器相互隔离。
+
+结合 Cgroups（用于资源限制）和文件系统隔离，Namespace 使得轻量级的容器化成为可能。
+
+## 下一篇文章预告
+
+在下一篇文章中，我们将深入探讨 PID Namespace 的工作原理，以及如何使用系统调用创建和管理 PID Namespace。
+
+---
+
+参考资料：
+1. Linux Kernel Documentation
+2. "Namespaces in Operation" series by Michael Kerrisk
+3. 《Linux Containers and Virtualization》by Shashank Mohan Jain 

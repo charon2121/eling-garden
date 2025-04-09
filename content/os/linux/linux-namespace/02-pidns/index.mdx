@@ -1,0 +1,119 @@
+# 深入理解 PID Namespace
+
+<Callout type="info">
+本文是 Linux Namespace 系列的第二篇，重点解析 PID Namespace 的工作原理和应用。
+</Callout>
+
+## PID Namespace 概述
+
+PID（Process ID）Namespace 是 Linux 提供的一种隔离机制，用于隔离进程 ID 空间。在不同的 PID Namespace 中，进程可以拥有相同的 PID，互不干扰。每个 PID Namespace 都有自己的进程树，其中 PID 1 通常是该 Namespace 的 init 进程。
+
+## PID Namespace 的层级结构
+
+PID Namespace 具有嵌套的层级结构：
+
+- 子 Namespace 中的进程对于父 Namespace 是可见的
+- 父 Namespace 中的进程对于子 Namespace 是不可见的
+- 当父 Namespace 被销毁时，其所有子 Namespace 也会被销毁
+
+```
+┌─────────────────────────────────────┐
+│ PID Namespace (Parent)              │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │ PID Namespace (Child)           │ │
+│ │                                 │ │
+│ │ ┌─────────────────────────────┐ │ │
+│ │ │ PID Namespace (Grandchild)  │ │ │
+│ │ └─────────────────────────────┘ │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+## 使用系统调用创建 PID Namespace
+
+在 Linux 中，可以使用 `clone()` 系统调用创建新的 PID Namespace：
+
+<CodePlayground
+  title="使用 clone() 创建 PID Namespace"
+  language="c"
+  code={`#define _GNU_SOURCE
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+// 子进程的栈空间
+#define STACK_SIZE (1024 * 1024)
+static char child_stack[STACK_SIZE];
+
+// 子进程要执行的函数
+static int child_func() {
+    printf("Child PID in child namespace: %ld\\n", (long)getpid());
+    printf("Parent PID in child namespace: %ld\\n", (long)getppid());
+    
+    // 执行一个 shell
+    execlp("bash", "bash", NULL);
+    return 0;
+}
+
+int main() {
+    printf("Parent PID in parent namespace: %ld\\n", (long)getpid());
+    
+    // 创建新的PID namespace
+    pid_t child_pid = clone(child_func, 
+                            child_stack + STACK_SIZE,
+                            CLONE_NEWPID | SIGCHLD, NULL);
+    
+    printf("Child PID in parent namespace: %ld\\n", (long)child_pid);
+    
+    // 等待子进程结束
+    waitpid(child_pid, NULL, 0);
+    return 0;
+}`}
+/>
+
+## PID Namespace 的实际应用
+
+### 1. 容器隔离
+
+在 Docker 等容器技术中，PID Namespace 用于确保容器内的进程相互隔离，每个容器有自己的进程 ID 空间。
+
+### 2. 进程管理
+
+PID Namespace 使得每个 Namespace 可以有自己的 init 进程（PID 1），负责处理孤儿进程和信号。
+
+### 3. 系统安全
+
+通过隔离进程 ID 空间，可以防止容器内的进程观察或干扰宿主机或其他容器的进程。
+
+## PID Namespace 的限制和注意事项
+
+1. **信号传递**：跨 Namespace 传递信号需要特殊处理
+2. **进程监控**：从父 Namespace 监控子 Namespace 的进程需要映射 PID
+3. **/proc 文件系统**：每个 PID Namespace 需要自己的 /proc 挂载点
+4. **init 进程**：PID 1 进程的终止会导致该 Namespace 中所有进程被终止
+
+## 查看系统中的 PID Namespace
+
+可以通过 `/proc/[pid]/ns/pid` 查看进程所属的 PID Namespace：
+
+```bash
+# 查看当前进程的 PID Namespace
+ls -la /proc/self/ns/pid
+
+# 查看特定进程的 PID Namespace
+ls -la /proc/1234/ns/pid
+```
+
+## 结论
+
+PID Namespace 是 Linux 容器技术的重要组成部分，它提供了进程隔离的基础，使得容器可以拥有独立的进程空间。在下一篇文章中，我们将探讨 Mount Namespace 及其在容器文件系统隔离中的应用。
+
+---
+
+参考资料：
+1. Linux man-pages: pid_namespaces(7)
+2. Linux Kernel Source: kernel/pid.c
+3. 《Linux System Programming》by Robert Love 
