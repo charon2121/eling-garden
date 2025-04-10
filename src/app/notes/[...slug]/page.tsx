@@ -32,6 +32,7 @@ export default async function NotePage({ params }: { params: { slug: string[] } 
   try {
     // 需要等待 params
     const paramValues = await params;
+    console.log('paramValues', paramValues);
     const slug = paramValues.slug.join('/'); // 将路径数组合并为实际文件路径
     const meta = getArticleMeta(slug);
     const content = await loadMdxContent(slug, mdxComponents);
