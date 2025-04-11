@@ -1,6 +1,7 @@
 import { getAllArticleSlugs, getArticleMeta } from '@/lib/mdx';
 import Link from 'next/link';
 import { ArticleMeta } from '@/lib/types';
+import { HeroTest } from '@/components/HeroTest';
 
 // 按照分类组织文章
 function organizeArticlesByCategory(articles: ArticleMeta[]): Record<string, ArticleMeta[]> {
@@ -38,6 +39,11 @@ export default async function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Eling Notes</h1>
+        
+        {/* Hero UI 测试组件 */}
+        <div className="mb-8 rounded-lg border">
+          <HeroTest />
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {Object.entries(categorizedArticles).map(([category, categoryArticles]) => (
